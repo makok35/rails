@@ -22,6 +22,21 @@ jobs:
           path: bundle-audit-output.json
           destination: bundler-audit-artifact
           when: always
+     
+  chelsea:
+    machine: true
+    steps:
+      - checkout
+
+      - run: 
+        command: |
+          gem install chelsea
+          chelsea -f Gemfile.lock -t json | tail -n1 > chelsea-output.json      # tail -n1 to remove chelsea banner
+        when: on_fail
+
+      - store_artifacts:
+          path: chelsea-output.json
+          destination: chelsea-artifact
 
   integration:
     steps:
@@ -48,9 +63,12 @@ workflows:
       - bundler-audit:
           requires:
             - test
-      - integration:
+      - chelsea:
           requires:
             - bundler-audit
+      - integration:
+          requires:
+            - chelsea
       - prod:
           type: approval
           requires:
