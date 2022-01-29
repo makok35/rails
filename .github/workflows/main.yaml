@@ -35,10 +35,32 @@ jobs:
           name: bundler-audit
           path: bundle-audit-output.json
         if: always()                        # what is this for?
+        
+  oast: #Chelsea integration
+    runs-on: ubuntu-latest
+    needs: bundler-audit
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6.6 # Not needed with a .ruby-version file
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
+      - run: |
+          gem install chelsea
+          chelsea -f Gemfile.lock -t json | tail -n1 > chelsea-output.json      # tail -n1 to remove chelsea banner
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Chelsea
+          path: chelsea-output.json
+        if: always()                        # what is this for?
 
   integration:
     runs-on: ubuntu-latest
-    needs: bundler-audit
+    needs: oast
     steps:
       - run: echo "This is an integration step"
       - run: exit 1
